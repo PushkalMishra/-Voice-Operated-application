@@ -1,7 +1,9 @@
 if (process.env.NODE_ENV !== "production") {
     require('dotenv').config();
 }
-
+const Grid = require('gridfs-stream');
+const { GridFsStorage } = require("multer-gridfs-storage");
+const { Readable } = require('stream');
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -11,6 +13,7 @@ const FormData = require('form-data');  // Used to send files to Flask
 const fetch = require('node-fetch');    // For making HTTP requests to Flask
 const { spawn } = require('child_process');
 const http = require('http');
+const crypto = require('crypto');
 const ejsMate = require('ejs-mate');
 const flash = require('connect-flash');
 const session = require('express-session');
@@ -24,8 +27,9 @@ const BookingRoutes = require('./routes/book');
 const { isLoggedIn } = require('./middleware');
 const Train = require('./models/train');
 const MongoDBStore = require("connect-mongo");
-const dbUrl = process.env.DB_URL;
-mongoose.connect(dbUrl, { ssl: true,tlsInsecure: true});
+// const dbUrl = process.env.DB_URL;
+const dbUrl = 'mongodb://127.0.0.1:27017/voiceoperation';
+// mongoose.connect(dbUrl, { ssl: true,tlsInsecure: true});
 
 mongoose.connect(dbUrl);
 
@@ -40,7 +44,6 @@ app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.set('views', path.join(__dirname, 'views'));
-const upload = multer({ dest: 'uploads/' });
 app.use(mongoSanitize({
     replaceWith: '_'
 }))
@@ -84,8 +87,9 @@ function isFlaskRunning(callback) {
         callback(false); // Flask is not running
     });
 }
-
 // Function to start the Flask server
+
+
 function startFlaskServer() {
     return new Promise((resolve, reject) => {
         const flaskProcess = spawn('python', ['app.py']);
@@ -110,9 +114,9 @@ function startFlaskServer() {
 
 // Route to check if Flask is running
 app.get('/check-flask', (req, res) => {
-    isFlaskRunning(isRunning => {
-        res.sendStatus(isRunning ? 200 : 404);
-    });
+        isFlaskRunning(isRunning => {
+            res.sendStatus(isRunning ? 200 : 404);
+        });
 });
 
 // Route to start Flask server
@@ -144,52 +148,67 @@ app.post('/book', async (req, res) => {
     }
 });
 
-// Handle file uploads and interact with Flask
-app.post('/upload', upload.single('file'), (req, res) => {
-    const file = req.file;
-
-    if (!file) {
-        return res.status(400).send('No file uploaded');
+const storage = new GridFsStorage({ 
+    url: dbUrl, 
+    file: (req, file) => { 
+        return new Promise((resolve, reject) => { 
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) { 
+                    return reject(err); 
+                } 
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = { filename: filename, bucketName: 'uploads'}; 
+                resolve(fileInfo); 
+            }); 
+        }); 
     }
+});
 
-    // Check if Flask server is running
+const upload = multer({ storage });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        console.log("no file")
+        return res.status(400).send('No file uploaded');
+        
+    }
+    console.log('uploaded');
+    const fileId = req.file.id; // MongoDB Objectname
+    console.log(`File uploaded successfully: ${req.file.filename}`);
+
+    // Check if Flask is running
     isFlaskRunning(async (isRunning) => {
         if (!isRunning) {
             console.log('Flask is not running. Starting Flask...');
             await startFlaskServer();
 
             // Add a delay to give Flask some time to start
-            await new Promise(resolve => setTimeout(resolve, 5000));  // Wait for 5 seconds
+            await new Promise(resolve => setTimeout(resolve, 5000));  // Wait
         }
-
-        // Prepare FormData for sending the file to Flask
-        const formData = new FormData();
-        const filePath = path.join(__dirname, 'uploads', file.filename);
-        formData.append('file', fs.createReadStream(filePath));
-
-        // Send the file to Flask for processing
-        fetch('http://localhost:5000/upload', {
+        // Send the fileId to Flask for processing
+        fetch('http://127.0.0.1:5000/upload', {
             method: 'POST',
-            body: formData
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileId }),
+        }).then(
+            response=>response.json()
+        ).then(result=>{
+            console.log('Flask result:', result);
+            res.json(result);
         })
-            .then(response => response.json())
-            .then(result => {
-                console.log('Flask result:', result);
-                res.json(result);
-            })
-            .catch(err => {
-                console.error('Error sending file to Flask:', err);
-                res.status(500).send('Error processing file');
-            });
+
+        .catch (err=>{
+            console.error('Error sending file to Flask:', err);
+            res.status(500).send('Error processing file');
+        });
     });
 });
-
 app.get('/book', isLoggedIn, (req, res) => {
     res.render('book');
 });
 
 app.use('/', userRoutes);
-const Port = process.env.PORT || 3000;
+const Port = 3000;
 app.listen(Port, () => {
     console.log(`Serving on port ${Port}`)
 })

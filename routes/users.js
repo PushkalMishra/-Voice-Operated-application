@@ -14,7 +14,7 @@ router.post('/register',async(req,res)=>{
     const registerUser=await User.register(u,password)
     await registerUser.save();
     console.log(registerUser);
-    res.redirect('/book')
+    res.redirect('/login')
     }
     catch(e){
         req.flash('error',e.message);

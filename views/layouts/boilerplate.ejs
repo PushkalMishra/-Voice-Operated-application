@@ -76,15 +76,20 @@ if (annyang) {
         'set username to *name': function(name) {
             document.getElementById('username').value = name;
             console.log(name);
-            speak('Username set to ' + name);  // Voice feedback
+            speak('Username set to ' + name); 
+            console.log("next field is spoken")
+            speak("what's the email") // Voice feedback
         },
         'set email to *email': function(email) {
             document.getElementById('email').value = email;
-            speak('Email set to ' + email);  // Voice feedback
+            speak('Email set to ' + email); 
+            console.log("next field is spoken")
+            speak("what's the password") 
         },
         'set password to *password': function(password) {
             document.getElementById('password').value = password;
-            speak('Password set to ' + password);  // Voice feedback
+            speak('Password set to ' + password);
+            speak("submi the form") 
         },
         'submit registration form': function() {
             document.getElementById('registerForm').submit();

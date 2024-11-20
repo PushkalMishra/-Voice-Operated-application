@@ -24,7 +24,7 @@
         </header>
 
         <main class="px-3 mt-5">
-            <h1>YelpCamp</h1>
+            <h1>RailINDIA</h1>
             <p class="lead">Welcome to Indian Railway! <br> Jump right in and explore our many places.<br>Feel free to share some of your own and comment on others!</p>
             <a href="./book" class="btn btn-lg btn-secondary font-weight-bold border-white bg-white">Book</a>
         </main>
@@ -37,53 +37,74 @@
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
 }
-        async function startRecordingWithFlask() {
-            try {
-                // Check if Flask is running; if not, start it
-                const flaskStatus = await fetch('/check-flask');
-                if (flaskStatus.status !== 200) {
-                    await fetch('/start-flask');
-                    console.log("Starting Flask server...");
-                    await new Promise(resolve => setTimeout(resolve, 5000));  // Delay for Flask to start
-                }
-
-                // Start recording audio
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mediaRecorder = new MediaRecorder(stream);
-                const audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const formData = new FormData();
-                    formData.append('file', audioBlob, 'recording.wav');
-
-                    // Send the recorded audio to the server
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    const likelihood = result.result * 100;
-                    alert(`Result: ${likelihood}% likely to be AI generated`);
-
-                    if (likelihood < 50) {
-                        setTimeout(() => {
-                            window.location.href = '/book';
-                        }, 2000);  // Redirect to the book page after a delay
-                    }
-                };
-
-                mediaRecorder.start();
-                console.log("Recording started...");
-                setTimeout(() => mediaRecorder.stop(), 10000);  // Stop recording after 10 seconds
-            } catch (error) {
-                console.error("Error accessing microphone or Flask server:", error);
+async function startRecordingWithFlask() {
+        try {
+            // Check if Flask is running
+            const flaskStatus = await fetch('/check-flask');
+            if (flaskStatus.status !== 200) {
+                await fetch('/start-flask');
+                console.log("Starting Flask server...");
+                await new Promise(resolve => setTimeout(resolve, 5000));  
+                // const flaskReady = await waitForFlask();
+                // if (!flaskReady) {
+                //     alert("Flask server failed to start. Please try again later.");
+                //     return;
+                // }
             }
+
+            // Start recording audio
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                speak("Recording stopped. Processing the file.");
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'recording.wav');
+
+                // Send the recorded audio to the Express server
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                console.log('File uploaded successfully:', result);
+
+                // // Classify the file via Flask
+                // const classifyResponse = await fetch(`http://localhost:5000/upload`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ fileId: result.fileId })
+                // });
+                // const classifyResult = await classifyResponse.json();
+                const likelihood = result * 100;
+                alert(`Result: ${likelihood}% likely to be AI generated`);
+
+                if (likelihood < 50) {
+                    setTimeout(() => {
+                        window.location.href = '/book';
+                    }, 2000);
+                }
+            };
+
+            mediaRecorder.start();
+            speak("Recording started.");
+            setTimeout(() => mediaRecorder.stop(), 10000);  // Stop recording after 10 seconds
+        } catch (error) {
+            console.error("Error accessing microphone or Flask server:", error);
         }
+    }
+
+    // async function waitForFlask() {
+    //     for (let i = 0; i < 10; i++) {
+    //         const flaskStatus = await fetch('/check-flask');
+    //         if (flaskStatus.status === 200) return true;
+    //         await new Promise(resolve => setTimeout(resolve, 1000));
+    //     }
+    //     return false;
+    // }
 
         // Set up Annyang voice commands
         if (annyang) {
