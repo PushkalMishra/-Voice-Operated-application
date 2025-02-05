@@ -4,156 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/css/bootstrap.min.css"
-    integrity="sha384-r4NyP46KrjDleawBgD5tp8Y7UzmLA05oM1iAEQ17CSuDqnUK2+k9luXQOfXJCJ4I" crossorigin="anonymous">
-    <script  crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.js"></script>
-    <script crossorigin="anonymous" src="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.umd.min.js"></script>
-    <link crossorigin="anonymous" href="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.css" rel="stylesheet">
+    <link rel="stylesheet" href="/stylesheet/main.css">
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/annyang@2.6.1/dist/annyang.min.js"></script>
+    <script src="/javascript/annyang.js"></script>
 </head>
 <body class=" d-flex flex-column vh-100">
-    <%- include('../partials/navbar')%>
-    <main class="container mt-5">
-    <%-body%>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-    crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-    integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
-    crossorigin="anonymous"></script>
-    <!-- <script src="/javascripts/validateForms.js"></script> -->
-    <script src="https://cdn.jsdelivr.net/npm/annyang@2.6.1/dist/annyang.min.js"></script>
+    <div class="cover-container d-flex w-100 h-100 py-3 mx-auto flex-column">
+        <%- include('../partials/navbar')%>
+        <main class="container mt-5">
+            <%-body%>
+        </main>
+    </div>
     <script>
-    function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-}
+        // document.querySelector('.img__btn').addEventListener('click', function() {
+        //     document.querySelector('.cont').classList.toggle('s--signup');
+        // });
+        document.addEventListener("DOMContentLoaded", function () {
+            const path = window.location.pathname;
+            const cont = document.querySelector(".cont"); 
+            const toggleButton = document.querySelector(".img__btn");
 
-if (annyang) {
-    // Define commands to fill the form fields and give voice feedback
-    const stationMapping = {
-        'bhopal': 'BHOPAL JN',
-        'indore': 'INDORE JN',
-        'jabalpur': 'JABALPUR',
-        // Add more mappings as needed
-    };
-    var navigationCommands = {
-        'go to home': function() {
-          window.location.href = '/';
-        },
-        'go to booking':function() {
-          window.location.href='/book';
-        },
-        'go to login':function() {
-          window.location.href='/login';
-        },
-        'go to register':function() {
-          window.location.href='/register';
-        },
-        'logout': function() {
-          Window.location.href='/logout';
-        }
-      };
-    var commands = {
-        'Login name is *n': function(n) {
-            document.getElementById('username').value = n;
-            console.log("login name is set")
-            speak('Username set to ' + n);
-            console.log("next field is spoken")
-            speak("what's the password")  // Voice feedback
-        },
-        'My password is *p':function(p){
-            document.getElementById('password').value=p;
-            speak('password set');
-            speak("submit the form") 
-        },
-        'Login': function() {
-            document.getElementById('loginForm').submit();
-            speak('You are Logined Succesfully');  // Voice feedback
-        }
-    };
-    var registercommands = {
-        'set username to *name': function(name) {
-            document.getElementById('username').value = name;
-            console.log(name);
-            speak('Username set to ' + name); 
-            console.log("next field is spoken")
-            speak("what's the email") // Voice feedback
-        },
-        'set email to *email': function(email) {
-            document.getElementById('email').value = email;
-            speak('Email set to ' + email); 
-            console.log("next field is spoken")
-            speak("what's the password") 
-        },
-        'set password to *password': function(password) {
-            document.getElementById('password').value = password;
-            speak('Password set to ' + password);
-            speak("submi the form") 
-        },
-        'submit registration form': function() {
-            document.getElementById('registerForm').submit();
-            speak('Registration form submitted');  // Voice feedback
-        }
-    };
-    const bookingCommands = {
-        'set from station to *fromStation': function(fromStation) {
-            const standardizedFrom = stationMapping[fromStation.toLowerCase()];
-            if (standardizedFrom) {
-                document.getElementById('from').value = standardizedFrom;
-                speak(`From station set to ${standardizedFrom}`);
+    // Show correct form based on URL
+            if (path === "/register") {
+                cont.classList.add("s--signup");
             } else {
-                speak(`Sorry, I did not recognize the station "${fromStation}". Please specify again.`);
+                cont.classList.remove("s--signup");
             }
-        },
-        'set destination to *toStation': function(toStation) {
-            const standardizedTo = stationMapping[toStation.toLowerCase()];
-            if (standardizedTo) {
-                document.getElementById('to').value = standardizedTo;
-                speak(`To station set to ${standardizedTo}`);
-            } else {
-                speak(`Sorry, I did not recognize the station "${toStation}". Please specify again.`);
-            }
-        },
-        'set date to *date': function(date) {
-            document.getElementById('date').value = date;
-            speak(`Date set to ${date}`);
-        },
-        'set class preference to *preference': function(preference) {
-            const classMapping = {
-                'first AC': '1A',
-                'second AC': '2A',
-                'third AC': '3A',
-                'sleeper': 'SL',
-                'chair car': 'CC',
-                'all classes': ''
-            };
-            document.getElementById('preference').value = classMapping[preference.toLowerCase()] || '';
-            speak(`Class preference set to ${preference}`);
-        },
-        'submit booking form': function() {
-            document.querySelector('form').submit();
-            speak('Booking form submitted');
-        }
-    };
-    annyang.addCommands(commands);
-    annyang.addCommands(navigationCommands);
-    annyang.addCommands(registercommands);
-    annyang.addCommands(bookingCommands);
-    annyang.start();
-    window.onload = () => { 
-        const path = window.location.pathname;
-        if (path === '/login') {
-            console.log("Login page is loaded");
-            speak("What is your login name?");
-        } else if (path === '/register') {
-            console.log("Register page is loaded");
-            speak("What is your username?");
-        }
-    };
-} else {
-console.log('annyang not supported in this browser');
-}
+
+    // Toggle on button click and update URL
+            toggleButton.addEventListener("click", function () {
+                cont.classList.toggle("s--signup");
+                
+                if (cont.classList.contains("s--signup")) {
+                    history.pushState({}, "", "/register"); // Change URL to /register
+                } else {
+                    history.pushState({}, "", "/login"); // Change URL to /login
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(link => link.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    });
     </script>
 </body>
 </html>

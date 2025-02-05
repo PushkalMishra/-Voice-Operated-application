@@ -4,14 +4,14 @@ const router=express.Router();
 const passport=require("passport");
 const {isLoggedIn}=require('../middleware')
 router.get('/register',(req,res)=>{
-    res.render('users/register')
+    res.render('users/login')
 })
 
 router.post('/register',async(req,res)=>{
     try{
-    const {email,username,password}=req.body;
-    const u=new User({email,username});
-    const registerUser=await User.register(u,password)
+    const {email,newusername,newpassword}=req.body;
+    const u=new User({email,username:newusername});
+    const registerUser=await User.register(u,newpassword)
     await registerUser.save();
     console.log(registerUser);
     res.redirect('/login')

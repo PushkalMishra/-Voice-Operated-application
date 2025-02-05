@@ -39,4 +39,5 @@ const trainSchema = Schema({
 });
 
 // Train Model
+
 module.exports=mongoose.model('Train', trainSchema);

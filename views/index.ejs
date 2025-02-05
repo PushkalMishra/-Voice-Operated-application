@@ -4,24 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Generated Voice Detector</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/css/bootstrap.min.css"
-          integrity="sha384-r4NyP46KrjDleawBgD5tp8Y7UzmLA05oM1iAEQ17CSuDqnUK2+k9luXQOfXJCJ4I" crossorigin="anonymous">
+    <link rel="stylesheet" href="/stylesheet/main.css">
     <link rel="stylesheet" href="/stylesheet/indexx.css">
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/annyang@2.6.1/dist/annyang.min.js"></script>
+    <script src="/javascript/annyang.js"></script>
 </head>
 <body class="d-flex flex-column vh-100 text-center text-white bg-dark">
-    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-        <header class="mb-5">
-            <div>
-                <h3 class="float-md-left mb-0">RailINDIA</h3>
-                <nav class="nav nav-masthead justify-content-center float-md-right">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    <a class="nav-link" href="/book">Booking</a>
-                    <a class="nav-link" href="/login">Login</a>
-                    <a class="nav-link" href="/register">Register</a>
-                    <a class="nav-link" href="/logout">Logout</a>
-                </nav>
+    <div class="cover-container d-flex w-100 h-100 py-3 mx-auto flex-column">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+              <a class="navbar-brand font-weight-bold text-white" href="#">RailINDIA</a>
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                  <a class="nav-link font-weight-bold text-white" href="/">Home</a>
+                  <a class="nav-link font-weight-bold text-white" href="/book">Booking</a>
+                  <a class="nav-link font-weight-bold text-white" href="/login">Login/Register</a>
+                  <a class="nav-link font-weight-bold text-white" href="/logout">Logout</a>
+                </div>
+              </div>  
             </div>
-        </header>
+        </nav>
 
         <main class="px-3 mt-5">
             <h1>RailINDIA</h1>
@@ -29,109 +35,5 @@
             <a href="./book" class="btn btn-lg btn-secondary font-weight-bold border-white bg-white">Book</a>
         </main>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/annyang@2.6.1/dist/annyang.min.js"></script>
-    <script>
-        // Function to start recording after starting the Flask server
-        function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-}
-async function startRecordingWithFlask() {
-        try {
-            // Check if Flask is running
-            const flaskStatus = await fetch('/check-flask');
-            if (flaskStatus.status !== 200) {
-                await fetch('/start-flask');
-                console.log("Starting Flask server...");
-                await new Promise(resolve => setTimeout(resolve, 5000));  
-                // const flaskReady = await waitForFlask();
-                // if (!flaskReady) {
-                //     alert("Flask server failed to start. Please try again later.");
-                //     return;
-                // }
-            }
-
-            // Start recording audio
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            const audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                speak("Recording stopped. Processing the file.");
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('file', audioBlob, 'recording.wav');
-
-                // Send the recorded audio to the Express server
-                const response = await fetch('/upload', { method: 'POST', body: formData });
-                const result = await response.json();
-                console.log('File uploaded successfully:', result);
-
-                // // Classify the file via Flask
-                // const classifyResponse = await fetch(`http://localhost:5000/upload`, {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify({ fileId: result.fileId })
-                // });
-                // const classifyResult = await classifyResponse.json();
-                const likelihood = result * 100;
-                alert(`Result: ${likelihood}% likely to be AI generated`);
-
-                if (likelihood < 50) {
-                    setTimeout(() => {
-                        window.location.href = '/book';
-                    }, 2000);
-                }
-            };
-
-            mediaRecorder.start();
-            speak("Recording started.");
-            setTimeout(() => mediaRecorder.stop(), 10000);  // Stop recording after 10 seconds
-        } catch (error) {
-            console.error("Error accessing microphone or Flask server:", error);
-        }
-    }
-
-    // async function waitForFlask() {
-    //     for (let i = 0; i < 10; i++) {
-    //         const flaskStatus = await fetch('/check-flask');
-    //         if (flaskStatus.status === 200) return true;
-    //         await new Promise(resolve => setTimeout(resolve, 1000));
-    //     }
-    //     return false;
-    // }
-
-        // Set up Annyang voice commands
-        if (annyang) {
-            const commands = {
-                'start recording': startRecordingWithFlask,
-                'go to home': () => window.location.href = '/',
-                'go to booking': () => window.location.href = '/book',
-                'go to login': () => window.location.href = '/login',
-                'go to register': () => window.location.href = '/register',
-                'logout': () => window.location.href = '/logout'
-            };
-            annyang.addCommands(commands);
-            annyang.start();
-            window.onload = () => { 
-                speak("tell when u want to start recording");
-    };
-        }
-        else {
-            console.log('Annyang not supported in this browser.');
-        }
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-            integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
-            crossorigin="anonymous"></script>
 </body>
 </html>
