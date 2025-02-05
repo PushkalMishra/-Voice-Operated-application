@@ -26,8 +26,6 @@ const userRoutes = require('./routes/users');
 const { isLoggedIn } = require('./middleware');
 const MongoDBStore = require("connect-mongo");
 const dbUrl = process.env.DB_URL;
-// const dbUrl = 'mongodb://127.0.0.1:27017/voiceoperation';
-// mongoose.connect(dbUrl, { ssl: true,tlsInsecure: true});
 
 mongoose.connect(dbUrl);
 
